@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GHOST SKELETON STUDIO • 3D Biomechanics, Arcade Reflex & 42-Point Knot Coach</title>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #030407;
+      --panel: #090c13;
+      --border: #1e293b;
+      --cyan: #00f0ff;
+      --gold: #fbbf24;
+      --green: #10b981;
+      --red: #ff1e42;
+      --purple: #a855f7;
+      --txt: #f8fafc;
+      --muted: #94a3b8;
+      --font-horror: 'Creepster', cursive;
+      --font-body: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 50% 0%, #0f172a 0%, #030407 72%);
+      color: var(--txt);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(6, 9, 15, 0.96);
+      border-bottom: 2px solid #1e293b;
+      padding: 12px 3vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: 0 10px 35px rgba(0, 240, 255, 0.08);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      font-family: var(--font-horror);
+      font-size: 36px;
+      letter-spacing: 3px;
+      color: var(--cyan);
+      text-shadow: 0 0 15px rgba(0, 240, 255, 0.75), 2px 2px 0 #000;
+      line-height: 1;
+    }
+    .badge {
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      font: 700 11px var(--font-mono);
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .spooky-btn {
+      background: #101624;
+      color: var(--txt);
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font: 700 12.5px var(--font-body);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .spooky-btn:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+    }
+    .spooky-btn.active-mode {
+      background: rgba(0, 240, 255, 0.18);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+    }
+    .spooky-btn.sim-active {
+      background: rgba(251, 191, 36, 0.2);
+      border-color: var(--gold);
+      color: #fde68a;
+    }
+    .spooky-btn.watch-btn {
+      background: linear-gradient(135deg, #0284c7, #06b6d4);
+      border-color: #67e8f9;
+      color: #030712;
+    }
+    .spooky-btn.try-btn {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: #6ee7b7;
+      color: #030712;
+    }
+    .spooky-btn.card-btn {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border-color: #d8b4fe;
+      color: #ffffff;
+    }
+
+    .container {
+      max-width: 1420px;
+      margin: 16px auto 40px;
+      padding: 0 3vw;
+    }
+
+    .routine-bar {
+      background: var(--panel);
+      border: 1.5px solid #1e293b;
+      border-radius: 14px;
+      padding: 11px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.65);
+    }
+    .step-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .step-chip {
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      padding: 7px 13px;
+      font: 700 12.5px var(--font-body);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .step-chip.current {
+      background: rgba(0, 240, 255, 0.16);
+      border-color: var(--cyan);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.28);
+    }
+
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 820px) {
+      .telemetry-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+    .tele-card {
+      background: var(--panel);
+      border: 1.5px solid #1e293b;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tele-label {
+      font: 700 10.5px var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 0.6px;
+    }
+    .tele-val {
+      font: 700 18px var(--font-mono);
+      color: var(--cyan);
+    }
+
+    .split-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 920px) {
+      .split-stage { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.75);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    .panel-title {
+      font-family: var(--font-horror);
+      font-size: 25px;
+      letter-spacing: 2px;
+      color: #e2e8f0;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+    }
+    .canvas-box {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      background: #020305;
+      border: 2px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .hud-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(3, 4, 7, 0.9);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font: 700 11px var(--font-mono);
+      pointer-events: none;
+    }
+
+    .callout-bubble {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(9, 12, 19, 0.94);
+      color: #f8fafc;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: 600 13px var(--font-body);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .callout-bubble.error-alert {
+      background: rgba(69, 10, 22, 0.94);
+      border-color: var(--red);
+      color: #fecdd3;
+      box-shadow: 0 0 20px rgba(255, 30, 66, 0.35);
+    }
+    .callout-bubble.good-alert {
+      background: rgba(6, 78, 59, 0.92);
+      border-color: var(--green);
+      color: #a7f3d0;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 3, 6, 0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: #0b0f19;
+      border: 2px solid var(--cyan);
+      border-radius: 18px;
+      padding: 20px;
+      max-width: 560px;
+      width: 100%;
+      box-shadow: 0 0 50px rgba(0, 240, 255, 0.3);
+      text-align: center;
+    }
+    .modal-card img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1.5px solid #334155;
+      margin: 14px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-title">💀 GHOST SKELETON STUDIO</div>
+      <span class="badge">3D BIOMECHANICS + 42-PT HAND KNOT AI</span>
+    </div>
+
+    <div class="toolbar">
+      <button class="spooky-btn active-mode" id="btnArcade" onclick="setMode('arcade')">⚡ SHADOW REFLEX ARENA</button>
+      <button class="spooky-btn" id="btnKnot" onclick="setMode('knot')">🪢 42-PT KNOT & TIE MASTER</button>
+      <button class="spooky-btn" id="btnPushup" onclick="setMode('pushup')">💪 3D PUSH-UP PROTRACTOR</button>
+      <button class="spooky-btn" id="btnSquat" onclick="setMode('squat')">🏋️ 3D SQUAT PROTRACTOR</button>
+      <button class="spooky-btn" id="btnSim" onclick="toggleSimulatedAthlete()">🤖 AUTO-DEMO: OFF</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="routine-bar">
+      <div class="step-chips" id="stepChips"></div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="spooky-btn watch-btn" id="btnWatch" onclick="startWatchFirst()">👁️ WATCH DEMO (3.6s)</button>
+        <button class="spooky-btn try-btn" id="btnTry" onclick="startTryNow()">🔥 START LIVE CHALLENGE</button>
+        <button class="spooky-btn card-btn" onclick="generateBattleCard()">📸 EXPORT RANK CARD</button>
+      </div>
+    </div>
+
+    <div class="telemetry-strip">
+      <div class="tele-card">
+        <span class="tele-label">CAMERA ANGLE & DEPTH RADAR</span>
+        <span class="tele-val" id="camAngleVal" style="color:var(--green);">OPTIMAL (0° TILT)</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">LIVE JOINT / FINGER PRECISION</span>
+        <span class="tele-val" id="precisionVal">0% ALIGNED</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">ARCADE COMBO & STREAK</span>
+        <span class="tele-val" id="comboVal" style="color:var(--gold);">1x • 0 HITS</span>
+      </div>
+      <div class="tele-card">
+        <span class="tele-label">SESSION RANK</span>
+        <span class="tele-val" id="rankVal" style="color:var(--purple);">B-RANK INITIATE</span>
+      </div>
+    </div>
+
+    <div class="split-stage">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="ghostPanelTitle">💀 GHOST SKELETON TUTOR</div>
+          <span class="badge" id="ghostPhaseBadge">STAGE: READY</span>
+        </div>
+        <div class="canvas-box">
+          <canvas id="ghostCanvas" width="640" height="480"></canvas>
+          <div class="hud-tag" id="ghostStepTag">POSE 1: IRON REPULSOR</div>
+          <div class="callout-bubble">
+            <span id="ghostInstruction">Watch the 3D Ghost Tutor, then lock into the pose before the ring closes!</span>
+            <span style="font-family:var(--font-mono);font-size:12px;color:#00f0ff;" id="timerTag">READY</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title" id="userPanelTitle">🦴 YOUR LIVE 3D SKELETON</div>
+          <span class="badge" id="camStatusBadge">CAMERA: INITIALIZING...</span>
+        </div>
+        <div class="canvas-box">
+          <video id="webcam" autoplay playsinline muted style="display:none;"></video>
+          <canvas id="userCanvas" width="640" height="480"></canvas>
+          <div class="hud-tag" id="boneStatusTag">WAITING TO START</div>
+          <div class="callout-bubble" id="feedbackBubble">
+            <span id="feedbackText">Click "START LIVE CHALLENGE" or toggle "AUTO-DEMO: ON" to test instantly!</span>
+            <span style="font-family:var(--font-mono);font-size:13px;" id="repCounter">SCORE: 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cardModal">
+    <div class="modal-card">
+      <div class="brand-title" style="font-size:30px;">🏆 CYBER SKELETON BATTLE CARD</div>
+      <p style="color:var(--muted);font-size:13px;margin:6px 0 0;">Ready to share in your meeting or download as PNG</p>
+      <img id="battleCardImg" alt="Battle Card Preview" />
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <a id="downloadCardLink" download="ghost-skeleton-rank-card.png" class="spooky-btn try-btn" style="text-decoration:none;">⬇️ DOWNLOAD PNG</a>
+        <button class="spooky-btn" onclick="$('cardModal').classList.remove('open')">✕ CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const AudioEngine = (() => {
+  let ctx = null;
+  function ensure() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+  }
+  return {
+    playLock(combo = 1) {
+      try {
+        ensure();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        const baseFreq = 330 + Math.min(combo, 10) * 55;
+        osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.24);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.24);
+      } catch (e) {}
+    },
+    playTick() {
+      try {
+        ensure();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, ctx.currentTime);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+      } catch (e) {}
+    }
+  };
+})();
+
+let shatterParticles = [];
+function spawnShatterBurst(x, y, color = '#10b981') {
+  for (let i = 0; i < 32; i++) {
+    const ang = (Math.PI * 2 * i) / 32 + Math.random() * 0.2;
+    const spd = 2.5 + Math.random() * 6.0;
+    shatterParticles.push({
+      x, y,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd - 1.5,
+      size: 3 + Math.random() * 4.5,
+      color,
+      life: 1.0
+    });
+  }
+}
+
+function updateAndDrawParticles(ctx) {
+  shatterParticles = shatterParticles.filter(p => p.life > 0.02);
+  shatterParticles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.14;
+    p.life *= 0.93;
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 10;
+    ctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
+    ctx.restore();
+  });
+}
+
+function draw3DPerspectiveStage(ctx, w, h, tiltDeg = 0) {
+  const grad = ctx.createRadialGradient(w * 0.5, h * 0.42, 20, w * 0.5, h * 0.5, w * 0.72);
+  grad.addColorStop(0, '#0c1829');
+  grad.addColorStop(1, '#020306');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  const horizonY = h * 0.76;
+  const floorBottom = h * 0.98;
+  const shiftX = Math.max(-45, Math.min(45, tiltDeg * 1.5));
+
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.16)';
+  ctx.lineWidth = 1.2;
+
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const y = horizonY + (floorBottom - horizonY) * (t * t);
+    ctx.beginPath();
+    ctx.moveTo(w * 0.08, y);
+    ctx.lineTo(w * 0.92, y);
+    ctx.stroke();
+  }
+
+  for (let i = -4; i <= 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(w * 0.5 + i * 32 + shiftX, horizonY);
+    ctx.lineTo(w * 0.5 + i * 78, floorBottom);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const BONES = [
+  { id: 'l_upper_arm', a: 11, b: 13, label: 'Left Humerus', type: 'humerus' },
+  { id: 'l_forearm',   a: 13, b: 15, label: 'Left Forearm', type: 'forearm' },
+  { id: 'r_upper_arm', a: 12, b: 14, label: 'Right Humerus', type: 'humerus' },
+  { id: 'r_forearm',   a: 14, b: 16, label: 'Right Forearm', type: 'forearm' },
+  { id: 'l_thigh',     a: 23, b: 25, label: 'Left Femur', type: 'femur' },
+  { id: 'l_shin',      a: 25, b: 27, label: 'Left Tibia', type: 'tibia' },
+  { id: 'r_thigh',     a: 24, b: 26, label: 'Right Femur', type: 'femur' },
+  { id: 'r_shin',      a: 26, b: 28, label: 'Right Tibia', type: 'tibia' },
+  { id: 'spine',       a: 'neck', b: 'pelvis', label: 'Spine & Ribcage', type: 'spine' }
+];
+
+function makePose(overrides) {
+  const base = {
+    0:  { x: 0.50, y: 0.16, z: 0 },
+    11: { x: 0.40, y: 0.29, z: 0 },
+    12: { x: 0.60, y: 0.29, z: 0 },
+    13: { x: 0.34, y: 0.43, z: 0 },
+    14: { x: 0.66, y: 0.43, z: 0 },
+    15: { x: 0.32, y: 0.56, z: 0 },
+    16: { x: 0.68, y: 0.56, z: 0 },
+    23: { x: 0.44, y: 0.55, z: 0 },
+    24: { x: 0.56, y: 0.55, z: 0 },
+    25: { x: 0.43, y: 0.73, z: 0 },
+    26: { x: 0.57, y: 0.73, z: 0 },
+    27: { x: 0.43, y: 0.90, z: 0 },
+    28: { x: 0.57, y: 0.90, z: 0 }
+  };
+  for (const k in overrides) base[k] = { ...base[k], ...overrides[k] };
+  return base;
+}
+
+const ROUTINES = {
+  arcade: {
+    steps: [
+      {
+        name: '1. Iron Repulsor Blast ⚡',
+        tip: 'Left palm forward repulsor thrust + right arm cocked back in a wide power stance!',
+        duration: 4.0,
+        poseA: makePose({
+          13: { x: 0.31, y: 0.34 }, 15: { x: 0.22, y: 0.32 },
+          14: { x: 0.68, y: 0.40 }, 16: { x: 0.75, y: 0.46 },
+          25: { x: 0.38, y: 0.72 }, 26: { x: 0.62, y: 0.72 },
+          27: { x: 0.36, y: 0.90 }, 28: { x: 0.64, y: 0.90 }
+        }),
+        poseB: makePose({
+          13: { x: 0.28, y: 0.29 }, 15: { x: 0.16, y: 0.28 },
+          14: { x: 0.69, y: 0.39 }, 16: { x: 0.77, y: 0.46 },
+          25: { x: 0.37, y: 0.72 }, 26: { x: 0.63, y: 0.72 },
+          27: { x: 0.35, y: 0.90 }, 28: { x: 0.65, y: 0.90 }
+        }),
+        simErrorBone: 'l_forearm',
+        simErrorTip: 'Extend Left Forearm straight out for Repulsor lock!'
+      },
+      {
+        name: '2. Cyber Archer Draw 🏹',
+        tip: 'Extend right arm straight sideways & pull left elbow high across chest like drawing a bow!',
+        duration: 4.0,
+        poseA: makePose({
+          14: { x: 0.73, y: 0.29 }, 16: { x: 0.85, y: 0.29 },
+          13: { x: 0.36, y: 0.31 }, 15: { x: 0.50, y: 0.29 }
+        }),
+        poseB: makePose({
+          14: { x: 0.74, y: 0.28 }, 16: { x: 0.87, y: 0.28 },
+          13: { x: 0.33, y: 0.27 }, 15: { x: 0.48, y: 0.28 }
+        }),
+        simErrorBone: 'r_upper_arm',
+        simErrorTip: 'Raise Right Humerus parallel to shoulder!'
+      },
+      {
+        name: '3. Warrior II Stance ⚔️',
+        tip: 'Spread both arms into a razor-sharp T-line and sink into a deep wide lunge!',
+        duration: 4.0,
+        poseA: makePose({
+          13: { x: 0.27, y: 0.31 }, 15: { x: 0.15, y: 0.31 },
+          14: { x: 0.73, y: 0.31 }, 16: { x: 0.85, y: 0.31 },
+          23: { x: 0.43, y: 0.62 }, 24: { x: 0.57, y: 0.62 },
+          25: { x: 0.31, y: 0.73 }, 26: { x: 0.68, y: 0.74 },
+          27: { x: 0.31, y: 0.90 }, 28: { x: 0.73, y: 0.90 }
+        }),
+        poseB: makePose({
+          13: { x: 0.26, y: 0.33 }, 15: { x: 0.14, y: 0.33 },
+          14: { x: 0.74, y: 0.33 }, 16: { x: 0.86, y: 0.33 },
+          23: { x: 0.43, y: 0.65 }, 24: { x: 0.57, y: 0.65 },
+          25: { x: 0.29, y: 0.74 }, 26: { x: 0.69, y: 0.75 },
+          27: { x: 0.30, y: 0.90 }, 28: { x: 0.75, y: 0.90 }
+        }),
+        simErrorBone: 'l_thigh',
+        simErrorTip: 'Bend Left Femur deeper into the Warrior lunge!'
+      },
+      {
+        name: '4. Victory V-Guard ✌️',
+        tip: 'Launch both arms overhead into a 60° Victory V-formation!',
+        duration: 4.0,
+        poseA: makePose({
+          13: { x: 0.32, y: 0.21 }, 15: { x: 0.24, y: 0.10 },
+          14: { x: 0.68, y: 0.21 }, 16: { x: 0.76, y: 0.10 }
+        }),
+        poseB: makePose({
+          13: { x: 0.30, y: 0.18 }, 15: { x: 0.21, y: 0.07 },
+          14: { x: 0.70, y: 0.18 }, 16: { x: 0.79, y: 0.07 }
+        }),
+        simErrorBone: 'r_forearm',
+        simErrorTip: 'Extend Right Forearm fully overhead!'
+      }
+    ]
+  },
+  knot: { steps: [] },
+  pushup: {
+    steps: [
+      {
+        name: '3D Push-Up Biomechanics (90° Elbow Protractor)',
+        tip: 'Keep spine straight at 180° & lower chest until elbow protractor hits 90°!',
+        duration: 6.0,
+        protractorJoint: 14,
+        poseA: makePose({
+          0:  { x: 0.83, y: 0.42 },
+          11: { x: 0.73, y: 0.47 }, 12: { x: 0.75, y: 0.49 },
+          13: { x: 0.72, y: 0.63 }, 14: { x: 0.74, y: 0.65 },
+          15: { x: 0.72, y: 0.79 }, 16: { x: 0.74, y: 0.81 },
+          23: { x: 0.47, y: 0.56 }, 24: { x: 0.49, y: 0.58 },
+          25: { x: 0.29, y: 0.65 }, 26: { x: 0.31, y: 0.67 },
+          27: { x: 0.13, y: 0.75 }, 28: { x: 0.15, y: 0.77 }
+        }),
+        poseB: makePose({
+          0:  { x: 0.84, y: 0.59 },
+          11: { x: 0.74, y: 0.63 }, 12: { x: 0.76, y: 0.65 },
+          13: { x: 0.64, y: 0.66 }, 14: { x: 0.66, y: 0.68 },
+          15: { x: 0.72, y: 0.79 }, 16: { x: 0.74, y: 0.81 },
+          23: { x: 0.47, y: 0.67 }, 24: { x: 0.49, y: 0.69 },
+          25: { x: 0.29, y: 0.71 }, 26: { x: 0.31, y: 0.73 },
+          27: { x: 0.13, y: 0.76 }, 28: { x: 0.15, y: 0.78 }
+        }),
+        simErrorBone: 'spine',
+        simErrorTip: 'Spine sagging! Brace core to keep 180° plank!'
+      }
+    ]
+  },
+  squat: {
+    steps: [
+      {
+        name: '3D Squat Biomechanics (Parallel Femur Protractor)',
+        tip: 'Sit hips back until Knee Protractor hits 90° & keep femur tracking outward!',
+        duration: 6.0,
+        protractorJoint: 26,
+        poseA: makePose({}),
+        poseB: makePose({
+          0:  { x: 0.50, y: 0.32 },
+          11: { x: 0.41, y: 0.44 }, 12: { x: 0.59, y: 0.44 },
+          13: { x: 0.39, y: 0.45 }, 14: { x: 0.61, y: 0.45 },
+          15: { x: 0.43, y: 0.44 }, 16: { x: 0.57, y: 0.44 },
+          23: { x: 0.43, y: 0.68 }, 24: { x: 0.57, y: 0.68 },
+          25: { x: 0.34, y: 0.72 }, 26: { x: 0.66, y: 0.72 },
+          27: { x: 0.36, y: 0.90 }, 28: { x: 0.64, y: 0.90 }
+        }),
+        simErrorBone: 'r_thigh',
+        simErrorTip: 'Right Femur caving inward — drive knee out!'
+      }
+    ]
+  }
+};
+
+let mode = 'arcade';
+let stepIndex = 0;
+let stageState = 'IDLE';
+let stageStartTime = 0;
+let simulatedAthlete = false;
+let latestWebcamPose = null;
+let latestHands = [];
+let webcamReady = false;
+
+let combo = 1;
+let totalHits = 0;
+let peakAlignment = 0;
+let reps = 0;
+let lastPeak = false;
+let roundLockAwarded = false;
+
+function setMode(newMode) {
+  mode = newMode;
+  stepIndex = 0;
+  stageState = 'IDLE';
+  roundLockAwarded = false;
+  $('btnArcade').classList.toggle('active-mode', mode === 'arcade');
+  $('btnKnot').classList.toggle('active-mode', mode === 'knot');
+  $('btnPushup').classList.toggle('active-mode', mode === 'pushup');
+  $('btnSquat').classList.toggle('active-mode', mode === 'squat');
+
+  $('ghostPanelTitle').textContent = mode === 'knot'
+    ? '🪢 3D GHOST TUTOR (WATCH & LEARN)'
+    : '💀 3D GHOST SKELETON TUTOR';
+  $('userPanelTitle').textContent = mode === 'knot'
+    ? '🖐️ YOUR LIVE HANDS + INTERACTIVE ROPE'
+    : (simulatedAthlete ? '🤖 AUTO-DEMO SKELETON' : '🦴 YOUR LIVE 3D SKELETON');
+
+  renderStepChips();
+  updateStageBadges();
+}
+
+function renderStepChips() {
+  const steps = ROUTINES[mode].steps;
+  $('stepChips').innerHTML = steps.map((s, idx) => `
+    <button class="step-chip ${idx === stepIndex ? 'current' : ''}" onclick="selectStep(${idx})">
+      ${s.name}
+    </button>
+  `).join('');
+  $('ghostStepTag').textContent = steps[stepIndex].name.toUpperCase();
+  $('ghostInstruction').textContent = steps[stepIndex].tip;
+}
+
+function selectStep(idx) {
+  stepIndex = idx;
+  roundLockAwarded = false;
+  if (mode === 'knot') {
+    KN.hold = 0;
+    KN.seen = -1;
+  }
+  renderStepChips();
+  startWatchFirst();
+}
+
+function startWatchFirst() {
+  stageState = 'WATCH';
+  stageStartTime = performance.now();
+  roundLockAwarded = false;
+  if (mode === 'knot') {
+    KN.hold = 0;
+    KN.complete = 0;
+    KN.flash = null;
+  }
+  AudioEngine.playTick();
+  updateStageBadges();
+}
+
+function startTryNow() {
+  stageState = 'TRY';
+  stageStartTime = performance.now();
+  roundLockAwarded = false;
+  if (mode === 'knot') {
+    KN.hold = 0;
+    KN.complete = 0;
+    KN.flash = null;
+  }
+  AudioEngine.playTick();
+  updateStageBadges();
+}
+
+function toggleSimulatedAthlete() {
+  simulatedAthlete = !simulatedAthlete;
+  $('btnSim').textContent = simulatedAthlete ? '🤖 AUTO-DEMO: ON' : '🤖 AUTO-DEMO: OFF';
+  $('btnSim').classList.toggle('sim-active', simulatedAthlete);
+  $('camStatusBadge').textContent = simulatedAthlete ? 'MODE: AUTO-DEMO' : (webcamReady ? 'CAMERA: LIVE' : 'CAMERA: WAITING');
+  if (stageState === 'IDLE') startTryNow();
+}
+
+function updateStageBadges() {
+  if ($('btnWatch')) $('btnWatch').style.outline = stageState === 'WATCH' ? '3px solid #ffffff' : 'none';
+  if ($('btnTry')) $('btnTry').style.outline = stageState === 'TRY' ? '3px solid #ffffff' : 'none';
+
+  if (stageState === 'IDLE') {
+    $('ghostPhaseBadge').textContent = 'STAGE: READY';
+    $('boneStatusTag').textContent = 'WAITING TO START';
+  } else if (stageState === 'WATCH') {
+    $('ghostPhaseBadge').textContent = '👁️ WATCHING DEMO...';
+    $('boneStatusTag').textContent = '👁️ DEMO PREVIEW PLAYING';
+    $('feedbackText').textContent = 'Watch how the ropes & hands move! Live Challenge starts in a moment...';
+    $('feedbackBubble').className = 'callout-bubble';
+  } else {
+    $('ghostPhaseBadge').textContent = '🔥 LIVE CHALLENGE ACTIVE';
+  }
+}
+
+function updateRankTelemetry(score) {
+  if (score > peakAlignment) peakAlignment = score;
+  $('precisionVal').textContent = `${score}% ALIGNED`;
+  $('comboVal').textContent = `${combo}x • ${totalHits} LOCKS`;
+  $('repCounter').textContent = mode === 'arcade' || mode === 'knot'
+    ? `LOCKS: ${totalHits}`
+    : `REPS: ${reps}`;
+
+  let rank = 'B-RANK INITIATE';
+  if (totalHits >= 6 || peakAlignment >= 95) rank = 'S-RANK CYBER SKELETON';
+  else if (totalHits >= 3 || peakAlignment >= 85) rank = 'A-RANK PHANTOM';
+  $('rankVal').textContent = rank;
+}
+
+function drawSculptedBone(ctx, x1, y1, x2, y2, thickness, color, glow) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const angle = Math.atan2(dy, dx);
+
+  ctx.save();
+  ctx.translate(x1, y1);
+  ctx.rotate(angle);
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.4;
+
+  const rEnd = thickness * 0.92;
+  const rMid = thickness * 0.42;
+
+  ctx.beginPath();
+  ctx.arc(0, -rEnd * 0.35, rEnd * 0.65, Math.PI * 0.5, Math.PI * 1.6);
+  ctx.quadraticCurveTo(len * 0.5, -rMid, len, -rEnd * 0.8);
+  ctx.arc(len, -rEnd * 0.35, rEnd * 0.65, -Math.PI * 0.6, Math.PI * 0.3);
+  ctx.arc(len, rEnd * 0.35, rEnd * 0.65, -Math.PI * 0.3, Math.PI * 0.6);
+  ctx.quadraticCurveTo(len * 0.5, rMid, 0, rEnd * 0.8);
+  ctx.arc(0, rEnd * 0.35, rEnd * 0.65, Math.PI * 0.4, Math.PI * 1.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPairedBone(ctx, x1, y1, x2, y2, thickness, color, glow) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 4) return;
+  const nx = (-dy / len) * (thickness * 0.45);
+  const ny = (dx / len) * (thickness * 0.45);
+  drawSculptedBone(ctx, x1 - nx * 0.5, y1 - ny * 0.5, x2 - nx * 0.5, y2 - ny * 0.5, thickness * 0.7, color, glow);
+  drawSculptedBone(ctx, x1 + nx, y1 + ny, x2 + nx, y2 + ny, thickness * 0.46, color, glow);
+}
+
+function drawDetailedSkull(ctx, x, y, color, glow) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.6;
+
+  ctx.beginPath();
+  ctx.arc(0, -5, 19, Math.PI * 0.88, Math.PI * 2.12);
+  ctx.lineTo(15, 6);
+  ctx.lineTo(9, 22);
+  ctx.lineTo(-9, 22);
+  ctx.lineTo(-15, 6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#020305';
+  ctx.beginPath();
+  ctx.ellipse(-6.5, -2, 4.5, 5.5, -0.15, 0, Math.PI * 2);
+  ctx.ellipse(6.5, -2, 4.5, 5.5, 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = glow === '#ff1e42' ? '#ff1e42' : '#00f0ff';
+  ctx.beginPath();
+  ctx.arc(-6.5, -2, 1.6, 0, Math.PI * 2);
+  ctx.arc(6.5, -2, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawThoraxAndPelvis(ctx, lSh, rSh, lHip, rHip, color, glow) {
+  const neckX = (lSh.x + rSh.x) / 2;
+  const neckY = (lSh.y + rSh.y) / 2;
+  const pelvX = (lHip.x + rHip.x) / 2;
+  const pelvY = (lHip.y + rHip.y) / 2;
+  const shW = Math.hypot(rSh.x - lSh.x, rSh.y - lSh.y);
+  const torsoH = Math.hypot(pelvX - neckX, pelvY - neckY);
+  const angle = Math.atan2(pelvY - neckY, pelvX - neckX) - Math.PI / 2;
+
+  ctx.save();
+  ctx.translate(neckX, neckY);
+  ctx.rotate(angle);
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 14;
+
+  drawSculptedBone(ctx, 0, 0, -shW * 0.5, 2, 5, color, glow);
+  drawSculptedBone(ctx, 0, 0, shW * 0.5, 2, 5, color, glow);
+
+  for (let i = 0; i <= 8; i++) {
+    const vy = (torsoH / 8) * i;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(-5.5, vy - 3, 11, 6, 2);
+    ctx.fill();
+  }
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4.2;
+  [0.16, 0.27, 0.38, 0.49].forEach((frac, idx) => {
+    const ry = torsoH * frac;
+    ctx.beginPath();
+    ctx.ellipse(0, ry, shW * (0.45 - idx * 0.03), 9, 0, 0.18, Math.PI - 0.18);
+    ctx.stroke();
+  });
+
+  ctx.translate(0, torsoH);
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.ellipse(-shW * 0.22, 0, shW * 0.22, 12, -0.22, 0, Math.PI * 2);
+  ctx.ellipse(shW * 0.22, 0, shW * 0.22, 12, 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawJointProtractor(ctx, pA, pB, pC, w, h) {
+  if (!pA || !pB || !pC) return;
+  const ax = pA.x * w, ay = pA.y * h;
+  const bx = pB.x * w, by = pB.y * h;
+  const cx = pC.x * w, cy = pC.y * h;
+
+  const ang1 = Math.atan2(ay - by, ax - bx);
+  const ang2 = Math.atan2(cy - by, cx - bx);
+  let deg = Math.abs(((ang2 - ang1) * 180) / Math.PI);
+  if (deg > 180) deg = 360 - deg;
+
+  const isTargetZone = deg >= 78 && deg <= 108;
+  const arcColor = isTargetZone ? '#10b981' : '#fbbf24';
+
+  ctx.save();
+  ctx.strokeStyle = arcColor;
+  ctx.fillStyle = isTargetZone ? 'rgba(16, 185, 129, 0.22)' : 'rgba(251, 191, 36, 0.18)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(bx, by);
+  ctx.arc(bx, by, 34, ang1, ang2, false);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.font = '700 13px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`${Math.round(deg)}°`, bx + 14, by - 14);
+  ctx.restore();
+}
+
+function drawFullAnatomicalSkeleton(ctx, w, h, pose, options = {}) {
+  if (!pose) return;
+  const { isGhost = false, boneResults = null, protractorJoint = null } = options;
+
+  const getColors = (boneId) => {
+    if (isGhost || !boneResults) return isGhost ? { c: '#00f0ff', g: '#00f0ff' } : { c: '#e2e8f0', g: '#00f0ff' };
+    const st = boneResults[boneId];
+    if (st === 'aligned') return { c: '#10b981', g: '#34d399' };
+    if (st === 'error')   return { c: '#ff1e42', g: '#ff1e42' };
+    return { c: '#64748b', g: 'transparent' };
+  };
+
+  if ((pose[11].visibility || 1) > 0.45 && (pose[23].visibility || 1) > 0.45) {
+    const spineCol = getColors('spine');
+    drawThoraxAndPelvis(
+      ctx,
+      { x: pose[11].x * w, y: pose[11].y * h },
+      { x: pose[12].x * w, y: pose[12].y * h },
+      { x: pose[23].x * w, y: pose[23].y * h },
+      { x: pose[24].x * w, y: pose[24].y * h },
+      spineCol.c,
+      spineCol.g
+    );
+  }
+
+  BONES.filter(b => b.type !== 'spine').forEach(bone => {
+    const pA = pose[bone.a], pB = pose[bone.b];
+    if (!pA || !pB) return;
+    if (!isGhost && ((pA.visibility || 0) < 0.45 || (pB.visibility || 0) < 0.45)) return;
+    const col = getColors(bone.id);
+    if (bone.type === 'forearm' || bone.type === 'tibia') {
+      drawPairedBone(ctx, pA.x * w, pA.y * h, pB.x * w, pB.y * h, 6.2, col.c, col.g);
+    } else {
+      drawSculptedBone(ctx, pA.x * w, pA.y * h, pB.x * w, pB.y * h, 7.0, col.c, col.g);
+    }
+  });
+
+  if (protractorJoint === 14) drawJointProtractor(ctx, pose[12], pose[14], pose[16], w, h);
+  if (protractorJoint === 26) drawJointProtractor(ctx, pose[24], pose[26], pose[28], w, h);
+
+  if (pose[0] && (isGhost || (pose[0].visibility || 0) > 0.45)) {
+    drawDetailedSkull(ctx, pose[0].x * w, pose[0].y * h, isGhost ? '#00f0ff' : '#f1f5f9', '#00f0ff');
+  }
+}
+
+const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
+];
+
+function makeSyntheticHand(cx, cy, pinchSpread = 0.04, scale = 1.0, flipX = 1) {
+  const pts = [];
+  pts[0] = { x: cx, y: cy + 0.14 * scale };
+  const fingerAngles = [-0.45, -0.18, 0.0, 0.16, 0.34];
+  const fingerLengths = [0.11, 0.17, 0.19, 0.17, 0.14];
+  for (let f = 0; f < 5; f++) {
+    const baseIdx = f * 4 + 1;
+    const ang = -Math.PI / 2 + fingerAngles[f] * flipX;
+    for (let j = 0; j < 4; j++) {
+      const dist = ((j + 1) / 4) * fingerLengths[f] * scale;
+      let px = cx + Math.cos(ang) * dist;
+      let py = (cy + 0.12 * scale) + Math.sin(ang) * dist;
+      if (f === 1 && j === 3) px -= pinchSpread * flipX;
+      pts[baseIdx + j] = { x: px, y: py };
+    }
+  }
+  return pts;
+}
+
+function draw21PointHandSkeleton(ctx, w, h, landmarks, color, glow) {
+  if (!landmarks || landmarks.length < 21) return;
+  ctx.save();
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3.2;
+  ctx.lineCap = 'round';
+
+  HAND_CONNECTIONS.forEach(([a, b]) => {
+    ctx.beginPath();
+    ctx.moveTo(landmarks[a].x * w, landmarks[a].y * h);
+    ctx.lineTo(landmarks[b].x * w, landmarks[b].y * h);
+    ctx.stroke();
+  });
+
+  landmarks.forEach((pt, idx) => {
+    const isTip = [4, 8, 12, 16, 20].includes(idx);
+    ctx.fillStyle = isTip ? '#fbbf24' : '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pt.x * w, pt.y * h, isTip ? 5 : 3.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function lerpPose(poseA, poseB, t) {
+  const out = {};
+  for (const k in poseA) {
+    out[k] = {
+      x: poseA[k].x + (poseB[k].x - poseA[k].x) * t,
+      y: poseA[k].y + (poseB[k].y - poseA[k].y) * t,
+      visibility: 1.0
+    };
+  }
+  return out;
+}
+
+function evaluatePerBoneAlignment(userPose, targetPose) {
+  const boneResults = {};
+  let alignedCount = 0;
+  let totalChecked = 0;
+  const wrongBones = [];
+
+  BONES.forEach(bone => {
+    let userAng, ghostAng;
+    if (bone.id === 'spine') {
+      if ((userPose[11].visibility || 0) < 0.45 || (userPose[23].visibility || 0) < 0.45) {
+        boneResults.spine = 'untracked';
+        return;
+      }
+      const uNeck = { x: (userPose[11].x + userPose[12].x) / 2, y: (userPose[11].y + userPose[12].y) / 2 };
+      const uPelv = { x: (userPose[23].x + userPose[24].x) / 2, y: (userPose[23].y + userPose[24].y) / 2 };
+      const gNeck = { x: (targetPose[11].x + targetPose[12].x) / 2, y: (targetPose[11].y + targetPose[12].y) / 2 };
+      const gPelv = { x: (targetPose[23].x + targetPose[24].x) / 2, y: (targetPose[23].y + targetPose[24].y) / 2 };
+      userAng = (Math.atan2(uPelv.y - uNeck.y, uPelv.x - uNeck.x) * 180) / Math.PI;
+      ghostAng = (Math.atan2(gPelv.y - gNeck.y, gPelv.x - gNeck.x) * 180) / Math.PI;
+    } else {
+      const uA = userPose[bone.a], uB = userPose[bone.b];
+      if (!uA || !uB || (uA.visibility || 0) < 0.45 || (uB.visibility || 0) < 0.45) {
+        boneResults[bone.id] = 'untracked';
+        return;
+      }
+      userAng = (Math.atan2(uB.y - uA.y, uB.x - uA.x) * 180) / Math.PI;
+      ghostAng = (Math.atan2(targetPose[bone.b].y - targetPose[bone.a].y, targetPose[bone.b].x - targetPose[bone.a].x) * 180) / Math.PI;
+    }
+
+    totalChecked++;
+    let diff = Math.abs(userAng - ghostAng) % 360;
+    if (diff > 180) diff = 360 - diff;
+
+    if (diff <= 26) {
+      boneResults[bone.id] = 'aligned';
+      alignedCount++;
+    } else {
+      boneResults[bone.id] = 'error';
+      wrongBones.push({ ...bone, diff: Math.round(diff) });
+    }
+  });
+
+  const score = totalChecked > 0 ? Math.round((alignedCount / totalChecked) * 100) : 0;
+  return { boneResults, score, wrongBones };
+}
+
+function generateBattleCard() {
+  const c = document.createElement('canvas');
+  c.width = 800;
+  c.height = 460;
+  const ctx = c.getContext('2d');
+
+  const g = ctx.createLinearGradient(0, 0, 800, 460);
+  g.addColorStop(0, '#040711');
+  g.addColorStop(1, '#0f172a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 800, 460);
+
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(14, 14, 772, 432);
+
+  ctx.drawImage($('userCanvas'), 410, 60, 350, 270);
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = '700 32px "Space Grotesk", sans-serif';
+  ctx.fillText('GHOST SKELETON STUDIO', 40, 74);
+
+  ctx.fillStyle = '#a855f7';
+  ctx.font = '700 22px "JetBrains Mono", monospace';
+  ctx.fillText($('rankVal').textContent, 40, 120);
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '600 18px "JetBrains Mono", monospace';
+  ctx.fillText(`PEAK PRECISION : ${peakAlignment}%`, 40, 185);
+  ctx.fillText(`TOTAL LOCKS    : ${totalHits}`, 40, 225);
+  ctx.fillText(`MAX COMBO      : ${combo}x`, 40, 265);
+  ctx.fillText(`ACTIVE MODE    : ${mode.toUpperCase()}`, 40, 305);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 13px "JetBrains Mono", monospace';
+  ctx.fillText('REAL-TIME 3D POSE + 42-POINT HAND BIOMECHANICS ENGINE', 40, 415);
+
+  const dataUrl = c.toDataURL('image/png');
+  $('battleCardImg').src = dataUrl;
+  $('downloadCardLink').href = dataUrl;
+  $('cardModal').classList.add('open');
+}
+
+async function init() {
+  renderStepChips();
+  const video = $('webcam');
+  const ghostCanvas = $('ghostCanvas');
+  const gCtx = ghostCanvas.getContext('2d');
+  const userCanvas = $('userCanvas');
+  const uCtx = userCanvas.getContext('2d');
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    webcamReady = true;
+    $('camStatusBadge').textContent = 'CAMERA: LIVE';
+
+    const pose = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+    pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    pose.onResults(res => { latestWebcamPose = res.poseLandmarks || null; });
+
+    const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+    hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.55, minTrackingConfidence: 0.55 });
+    hands.onResults(res => { latestHands = res.multiHandLandmarks || []; });
+
+    async function detectLoop() {
+      if (!simulatedAthlete && video.readyState >= 2) {
+        if (mode === 'knot') await hands.send({ image: video });
+        else await pose.send({ image: video });
+      }
+      requestAnimationFrame(detectLoop);
+    }
+    requestAnimationFrame(detectLoop);
+  } catch (err) {
+    $('camStatusBadge').textContent = 'NO CAM — AUTO-DEMO ACTIVE';
+    toggleSimulatedAthlete();
+  }
+
+  function renderFrame(now) {
+    const currentStep = ROUTINES[mode].steps[stepIndex];
+    const stageElapsed = (now - stageStartTime) / 1000;
+
+    if (stageState === 'WATCH') {
+      const rem = Math.max(0, currentStep.duration - stageElapsed);
+      $('timerTag').textContent = `DEMO: ${rem.toFixed(1)}s`;
+      if (stageElapsed >= currentStep.duration) startTryNow();
+    } else if (stageState === 'TRY') {
+      if (mode === 'arcade') {
+        const rem = Math.max(0, currentStep.duration - stageElapsed);
+        $('timerTag').textContent = `LOCK RING: ${rem.toFixed(1)}s`;
+        if (stageElapsed >= currentStep.duration) {
+          stepIndex = (stepIndex + 1) % ROUTINES[mode].steps.length;
+          stageStartTime = now;
+          roundLockAwarded = false;
+          renderStepChips();
+        }
+      } else if (mode !== 'knot') {
+        $('timerTag').textContent = `LIVE: ${stageElapsed.toFixed(1)}s`;
+      }
+    }
+
+    if (mode === 'knot') {
+      renderKnotFrame({ now, gCtx, uCtx, gc: ghostCanvas, uc: userCanvas, video });
+      requestAnimationFrame(renderFrame);
+      return;
+    }
+
+    const activeAnim = (stageState === 'WATCH' || stageState === 'TRY');
+    const speed = mode === 'arcade' ? 2.2 : 2.0;
+    const rawCos = activeAnim ? (0.5 - 0.5 * Math.cos(stageElapsed * speed)) : 0.85;
+    const wave = rawCos * rawCos * (3 - 2 * rawCos);
+
+    if (stageState === 'TRY' && (mode === 'pushup' || mode === 'squat')) {
+      const peak = wave > 0.85;
+      if (peak && !lastPeak) { reps++; lastPeak = true; AudioEngine.playLock(reps); }
+      else if (wave < 0.25) { lastPeak = false; }
+    }
+
+    const ghostPose = lerpPose(currentStep.poseA, currentStep.poseB, wave);
+    draw3DPerspectiveStage(gCtx, ghostCanvas.width, ghostCanvas.height, 0);
+    drawFullAnatomicalSkeleton(gCtx, ghostCanvas.width, ghostCanvas.height, ghostPose, {
+      isGhost: true,
+      protractorJoint: currentStep.protractorJoint || null
+    });
+
+    let activeUserPose = null;
+    let shoulderTiltDeg = 0;
+
+    if (simulatedAthlete) {
+      activeUserPose = lerpPose(currentStep.poseA, currentStep.poseB, wave);
+      const injectError = Math.sin(now * 0.0017) > 0.35;
+      if (injectError) {
+        if (currentStep.simErrorBone === 'l_forearm') activeUserPose[15].y += 0.22;
+        else if (currentStep.simErrorBone === 'r_upper_arm') { activeUserPose[14].y += 0.18; activeUserPose[16].y += 0.22; }
+        else if (currentStep.simErrorBone === 'l_thigh') { activeUserPose[25].x += 0.12; activeUserPose[25].y -= 0.08; }
+        else if (currentStep.simErrorBone === 'r_forearm') activeUserPose[16].y += 0.22;
+        else if (currentStep.simErrorBone === 'r_thigh') { activeUserPose[26].x -= 0.12; activeUserPose[26].y -= 0.08; }
+        else if (currentStep.simErrorBone === 'spine') { activeUserPose[23].y += 0.14; activeUserPose[24].y += 0.14; }
+      }
+    } else if (latestWebcamPose) {
+      activeUserPose = {};
+      latestWebcamPose.forEach((lm, idx) => {
+        activeUserPose[idx] = { x: 1 - lm.x, y: lm.y, z: lm.z || 0, visibility: lm.visibility };
+      });
+      const zDiff = (activeUserPose[12].z - activeUserPose[11].z) * 120;
+      shoulderTiltDeg = Math.round(zDiff);
+    }
+
+    draw3DPerspectiveStage(uCtx, userCanvas.width, userCanvas.height, shoulderTiltDeg);
+
+    if (!simulatedAthlete && webcamReady) {
+      uCtx.save();
+      uCtx.globalAlpha = 0.22;
+      uCtx.translate(userCanvas.width, 0);
+      uCtx.scale(-1, 1);
+      uCtx.drawImage(video, 0, 0, userCanvas.width, userCanvas.height);
+      uCtx.restore();
+    }
+
+    if (stageState === 'TRY' && mode === 'arcade') {
+      const progress = Math.min(1, stageElapsed / currentStep.duration);
+      uCtx.save();
+      uCtx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+      uCtx.lineWidth = 6;
+      uCtx.beginPath();
+      uCtx.arc(580, 56, 26, 0, Math.PI * 2);
+      uCtx.stroke();
+
+      uCtx.strokeStyle = progress > 0.75 ? '#ff1e42' : '#00f0ff';
+      uCtx.beginPath();
+      uCtx.arc(580, 56, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - progress));
+      uCtx.stroke();
+      uCtx.restore();
+    }
+
+    if (activeUserPose) {
+      $('camAngleVal').textContent = Math.abs(shoulderTiltDeg) <= 14
+        ? `OPTIMAL (${shoulderTiltDeg}° TILT)`
+        : `ANGLED (${shoulderTiltDeg}° — FACE CAM)`;
+      $('camAngleVal').style.color = Math.abs(shoulderTiltDeg) <= 14 ? 'var(--green)' : 'var(--gold)';
+
+      const { boneResults, score, wrongBones } = evaluatePerBoneAlignment(activeUserPose, ghostPose);
+      drawFullAnatomicalSkeleton(uCtx, userCanvas.width, userCanvas.height, activeUserPose, {
+        isGhost: false,
+        boneResults: stageState === 'TRY' ? boneResults : null,
+        protractorJoint: currentStep.protractorJoint || null
+      });
+
+      if (stageState === 'TRY') {
+        const bubble = $('feedbackBubble');
+        if (wrongBones.length > 0) {
+          const worst = wrongBones[0];
+          const msg = simulatedAthlete
+            ? currentStep.simErrorTip
+            : `FIX ${worst.label.toUpperCase()} (${worst.diff}° OFF TARGET)`;
+          $('boneStatusTag').textContent = `⚠️ ${worst.label.toUpperCase()} WRONG`;
+          $('boneStatusTag').style.borderColor = 'var(--red)';
+          $('boneStatusTag').style.color = '#ff1e42';
+          $('feedbackText').textContent = msg;
+          bubble.className = 'callout-bubble error-alert';
+        } else {
+          $('boneStatusTag').textContent = '✅ ALL BONES LOCKED!';
+          $('boneStatusTag').style.borderColor = 'var(--green)';
+          $('boneStatusTag').style.color = '#10b981';
+          $('feedbackText').textContent = 'PERFECT BIOMECHANICAL LOCK!';
+          bubble.className = 'callout-bubble good-alert';
+
+          if (!roundLockAwarded && mode === 'arcade') {
+            roundLockAwarded = true;
+            totalHits++;
+            combo++;
+            AudioEngine.playLock(combo);
+            spawnShatterBurst(320, 220, '#10b981');
+          }
+        }
+        updateRankTelemetry(score);
+      }
+    }
+
+    updateAndDrawParticles(uCtx);
+    requestAnimationFrame(renderFrame);
+  }
+
+  requestAnimationFrame(renderFrame);
+}
+
+/* ===================== KNOT COACH V4 ===================== */
+const TAU2 = Math.PI * 2;
+const KNOT_STEPS = [
+  { id: 1, icon: '✖️', color: '#22d3ee', title: 'CROSS: RIGHT→LEFT, LEFT→RIGHT', short: 'Gold rope goes LEFT, Cyan goes RIGHT',
+    say: 'Step 1: Move the RIGHT rope (🟡 GOLD) across to the LEFT, and the LEFT rope (🔵 CYAN) across to the RIGHT!',
+    mistake: 'Move GOLD hand to the left circle and CYAN hand to the right circle.',
+    labL: 'CYAN ROPE → RIGHT', labR: '← GOLD ROPE TO LEFT',
+    L: { a: [.32, .62], b: [.64, .58] }, R: { a: [.68, .62], b: [.36, .54] } },
+  { id: 2, icon: '🔄', color: '#e879f9', title: 'WRAP BEHIND & BACK', short: 'Gold wraps behind Cyan to the RIGHT',
+    say: 'Step 2: Hold Cyan steady on the right, and loop the GOLD rope BEHIND Cyan back to the RIGHT side!',
+    mistake: 'Keep CYAN steady; sweep GOLD behind and back out to the right circle.',
+    labL: 'CYAN: HOLD STEADY', labR: 'GOLD: LOOP BEHIND → RIGHT',
+    L: { a: [.64, .58], b: [.62, .58] }, R: { a: [.36, .54], b: [.68, .64], via: [.50, .78] } },
+  { id: 3, icon: '⬆️', color: '#34d399', title: 'GO UP TO COLLAR', short: 'Bring the rope UP behind the knot',
+    say: 'Step 3: Bring the active rope straight UP behind the cross into the top collar loop!',
+    mistake: 'Lift the GOLD hand straight UP to the top collar circle while CYAN holds the cross.',
+    labL: 'CYAN: HOLD KNOT BASE', labR: 'GOLD: LIFT UP ↑ COLLAR',
+    L: { a: [.62, .58], b: [.56, .52] }, R: { a: [.68, .64], b: [.50, .30] } },
+  { id: 4, icon: '⬇️', color: '#fb923c', title: 'DRAG DOWN & TIGHTEN', short: 'Pull the rope DOWN through the loop',
+    say: 'Step 4: Pinch the knot with Cyan at the collar and DRAG the rope straight DOWN to tighten the tie!',
+    mistake: 'CYAN holds near the collar; GOLD drags straight DOWN to the bottom circle.',
+    labL: 'CYAN: PINCH COLLAR', labR: 'GOLD: DRAG DOWN ↓ TIGHTEN',
+    L: { a: [.56, .52], b: [.46, .40] }, R: { a: [.50, .30], b: [.52, .78] } }
+];
+ROUTINES.knot.steps = KNOT_STEPS.map(s => ({
+  name: `${s.id}. ${s.title}`, tip: s.say, duration: 3.6, knotPhase: s.id, simErrorTip: s.mistake
+}));
+
+const KN = { trk: { L: null, R: null }, hold: 0, last: 0, seen: -1, flash: null, done: [false, false, false, false], complete: 0, sig: '' };
+const KN_TOL = 0.17, KN_HOLD = 0.25;
+
+(function () {
+  const css = `
+  #knotCoach{display:none;background:linear-gradient(135deg,#0b1220,#121a2e);border:2px solid #22d3ee;border-radius:18px;padding:16px;margin-bottom:16px;box-shadow:0 0 32px rgba(34,211,238,.2)}
+  body.knot-mode #knotCoach{display:block}
+  .kc-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .kc-title{font:400 32px var(--font-horror);letter-spacing:3px;color:#22d3ee;text-shadow:0 0 14px rgba(34,211,238,.7)}
+  .kc-legend{font:700 14.5px var(--font-body);background:rgba(2,6,23,.7);padding:6px 12px;border-radius:10px;border:1px solid #334155}
+  .kc-legend .l{color:#22d3ee}.kc-legend .r{color:#fbbf24}
+  .kc-prog{height:12px;background:#0f172a;border:1.5px solid #334155;border-radius:8px;overflow:hidden;flex:1;min-width:140px;max-width:260px}
+  .kc-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22d3ee,#e879f9,#34d399,#fb923c);transition:width .25s}
+  .kc-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:820px){.kc-steps{grid-template-columns:repeat(2,1fr)}}
+  .kc-card{position:relative;background:#0f172a;border:2px solid #334155;border-radius:14px;padding:12px 12px 12px 14px;opacity:.58;transition:all .15s;cursor:pointer}
+  .kc-card:hover{opacity:.9}
+  .kc-card .n{position:absolute;top:-12px;left:-8px;width:30px;height:30px;border-radius:50%;background:var(--c);color:#020617;font:700 17px var(--font-mono);display:flex;align-items:center;justify-content:center}
+  .kc-card .ico{font-size:24px}.kc-card .t{font:700 16px var(--font-body);color:var(--c);margin:2px 0}.kc-card .s{font:600 13px var(--font-body);color:#cbd5e1}
+  .kc-card.active{opacity:1;border-color:var(--c);box-shadow:0 0 24px var(--c);transform:translateY(-2px)}
+  .kc-card.done{opacity:1;border-color:#10b981;background:rgba(16,185,129,.14)}
+  .kc-card.done::after{content:'✔';position:absolute;top:6px;right:10px;color:#10b981;font:700 22px var(--font-mono)}
+  .kc-say{margin-top:12px;font:700 18px/1.35 var(--font-body);color:#f8fafc}
+  .kc-say b{color:var(--c)}
+  .kc-mistake{margin-top:5px;font:600 13.5px var(--font-body);color:#93c5fd}
+  .kc-chips{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .kc-chip{font:700 13.5px var(--font-mono);padding:6px 12px;border-radius:10px;border:2px solid #334155;background:#0f172a;color:#94a3b8}
+  .kc-chip.ok{border-color:#10b981;color:#6ee7b7;background:rgba(16,185,129,.18)}
+  .kc-chip.bad{border-color:#fbbf24;color:#fde68a;background:rgba(251,191,36,.12)}
+  body.knot-mode .callout-bubble{font-size:15px}
+  body.knot-mode .hud-tag{font-size:12px}`;
+  const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+  const el = document.createElement('div'); el.id = 'knotCoach';
+  el.innerHTML = `<div class="kc-head"><div class="kc-title">🪢 INTERACTIVE 4-STEP KNOT COACH</div>
+    <div class="kc-legend"><span class="l">🔵 CYAN ROPE</span> (Left Start) &nbsp;⇄&nbsp; <span class="r">🟡 GOLD ROPE</span> (Right Start)</div>
+    <div class="kc-prog"><i id="kcBar"></i></div></div>
+    <div class="kc-steps" id="kcSteps"></div>
+    <div class="kc-say" id="kcSay"></div><div class="kc-mistake" id="kcMistake"></div>
+    <div class="kc-chips">
+      <span class="kc-chip" id="kcL">🔵 CYAN HAND</span>
+      <span class="kc-chip" id="kcR">🟡 GOLD HAND</span>
+      <span class="kc-chip" id="kcHold">HOLD 0.0s</span>
+      <button class="spooky-btn watch-btn" style="margin-left:auto;padding:6px 12px;" onclick="startWatchFirst()">👁️ REPLAY DEMO</button>
+      <button class="spooky-btn sim-active" style="padding:6px 12px;" onclick="knotAutoPlayToggle()">⚡ AUTO-SOLVE ALL 4 STEPS</button>
+    </div>`;
+  document.querySelector('.split-stage').insertAdjacentElement('beforebegin', el);
+  $('kcSteps').innerHTML = KNOT_STEPS.map((s, i) => `<div class="kc-card" id="kc${i}" style="--c:${s.color}" onclick="selectStep(${i})"><div class="n">${s.id}</div><div class="ico">${s.icon}</div><div class="t">${s.title}</div><div class="s">${s.short}</div></div>`).join('');
+  const prev = setMode;
+  setMode = function (m) {
+    prev(m);
+    document.body.classList.toggle('knot-mode', m === 'knot');
+    if (m === 'knot') {
+      knotReset();
+      startWatchFirst();
+    }
+  };
+})();
+
+function knotAutoPlayToggle() {
+  if (!simulatedAthlete) toggleSimulatedAthlete();
+  startTryNow();
+}
+
+function knotReset() { KN.trk = { L: null, R: null }; KN.hold = 0; KN.done = [false, false, false, false]; KN.flash = null; KN.complete = 0; KN.seen = -1; }
+
+function knotPos(S, hand, u) {
+  const h = S[hand], a = h.a, b = h.b, v = h.via, e = u * u * (3 - 2 * u);
+  if (v) { const m = 1 - e; return [m * m * a[0] + 2 * m * e * v[0] + e * e * b[0], m * m * a[1] + 2 * m * e * v[1] + e * e * b[1]]; }
+  return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e];
+}
+function palmC(h) { let x = 0, y = 0; [0, 5, 9, 13, 17].forEach(i => { x += h[i].x; y += h[i].y; }); return { x: x / 5, y: y / 5 }; }
+function gripPt(h, w, hh) { return [(h[4].x + h[8].x) / 2 * w, (h[4].y + h[8].y) / 2 * hh]; }
+
+function assignRoles(list) {
+  const T = KN.trk, d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), out = {};
+  if (list.length === 1) {
+    const c = list[0];
+    if (T.L && T.R) out[d(c.c, T.L) <= d(c.c, T.R) ? 'L' : 'R'] = c;
+    else out[c.c.x < 0.5 ? 'L' : 'R'] = c;
+  } else if (list.length >= 2) {
+    const [a, b] = list.slice(0, 2).sort((p, q) => p.c.x - q.c.x);
+    if (T.L && T.R) {
+      const keep = d(a.c, T.L) + d(b.c, T.R), swap = d(a.c, T.R) + d(b.c, T.L);
+      if (keep <= swap) { out.L = a; out.R = b; } else { out.L = b; out.R = a; }
+    } else {
+      out.L = a; out.R = b;
+    }
+  }
+  if (out.L) T.L = { ...out.L.c };
+  if (out.R) T.R = { ...out.R.c };
+  return out;
+}
+
+function drawBraidedRopeSegment(ctx, f, t, colMain, colStripe, width, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  const cx = (f[0] + t[0]) / 2;
+  const cy = Math.max(f[1], t[1]) + 24;
+
+  ctx.beginPath();
+  ctx.moveTo(f[0], f[1]);
+  ctx.quadraticCurveTo(cx, cy, t[0], t[1]);
+  ctx.strokeStyle = '#020617';
+  ctx.lineWidth = width + 6;
+  ctx.stroke();
+
+  ctx.strokeStyle = colMain;
+  ctx.lineWidth = width;
+  ctx.stroke();
+
+  ctx.setLineDash([8, 9]);
+  ctx.strokeStyle = colStripe;
+  ctx.lineWidth = width * 0.45;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(t[0], t[1], width * 0.55, 0, TAU2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function knotDrawTie(ctx, w, h, si, progress, gL, gR, alpha = 1.0) {
+  const A = [w * 0.45, h * 0.26], B = [w * 0.55, h * 0.26];
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 14;
+  ctx.beginPath();
+  ctx.ellipse(w * 0.5, h * 0.19, w * 0.14, h * 0.065, 0, 0, TAU2);
+  ctx.stroke();
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  const behind = si === 1;
+  if (behind && gR) drawBraidedRopeSegment(ctx, B, gR, '#fbbf24', '#fef08a', 17, 0.52 * alpha);
+  if (gL) drawBraidedRopeSegment(ctx, A, gL, '#22d3ee', '#cffafe', 14, alpha);
+  if (!behind && gR) drawBraidedRopeSegment(ctx, B, gR, '#fbbf24', '#fef08a', 17, alpha);
+
+  const band = si >= 2 ? 1 : (si === 1 ? Math.min(1, progress * 1.4) : 0);
+  if (band > 0) {
+    ctx.strokeStyle = '#e879f9';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.5, h * 0.45, 30, 12, 0, Math.PI * 0.05, Math.PI * (0.05 + 1.9 * band));
+    ctx.stroke();
+  }
+
+  const kn = si >= 3 ? 1 : (si === 2 ? progress : 0);
+  if (kn > 0) {
+    const tightenScale = si === 3 ? (1 + 0.18 * progress) : 1;
+    const s = (12 + 16 * kn) * tightenScale;
+    ctx.fillStyle = si === 3 ? '#fb923c' : '#a855f7';
+    ctx.strokeStyle = '#020617';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.5, h * 0.30 - s * 0.2);
+    ctx.lineTo(w * 0.5 + s, h * 0.30 + s * 1.15);
+    ctx.lineTo(w * 0.5 - s, h * 0.30 + s * 1.15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  if (si === 3 && gR) {
+    drawBraidedRopeSegment(ctx, [w * 0.5, h * 0.44], gR, '#fbbf24', '#fef08a', 19, alpha);
+  }
+  ctx.restore();
+}
+
+function knotRing(ctx, x, y, col, label, t, r = 36) {
+  ctx.save();
+  const p = 1 + 0.12 * Math.sin(t * 7);
+  ctx.strokeStyle = col;
+  ctx.fillStyle = col;
+  ctx.lineWidth = 4;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 14;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.arc(x, y, r * p, 0, TAU2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
+  ctx.font = '700 13px "Space Grotesk"';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x, y - r * p - 8);
+  ctx.restore();
+}
+
+function knotArrow(ctx, w, h, h0, S, col, label, t) {
+  const a = S[h0].a, b = S[h0].b, v = S[h0].via, ax = a[0] * w, ay = a[1] * h, bx = b[0] * w, by = b[1] * h;
+  ctx.save();
+  ctx.strokeStyle = ctx.fillStyle = col;
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  const far = Math.hypot(bx - ax, by - ay) > 30;
+  if (far) {
+    const cx = v ? v[0] * w : (ax + bx) / 2, cy = v ? v[1] * h : (ay + by) / 2;
+    ctx.setLineDash([12, 9]);
+    ctx.lineDashOffset = -t * 55;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo(cx, cy, bx, by);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const ang = Math.atan2(by - cy, bx - cx);
+    ctx.translate(bx, by);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(4, 0);
+    ctx.lineTo(-18, -11);
+    ctx.lineTo(-18, 11);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = '700 13px "Space Grotesk"';
+  const tw = ctx.measureText(label).width + 16;
+  const lx = Math.max(tw / 2 + 6, Math.min(w - tw / 2 - 6, (ax + bx) / 2));
+  const ly = Math.min(h - 18, Math.max(70, (ay + by) / 2 + (h0 === 'L' ? 36 : -36)));
+  ctx.fillStyle = 'rgba(2,6,23,.92)';
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(lx - tw / 2, ly - 14, tw, 25, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, lx, ly + 4);
+  ctx.restore();
+}
+
+function knotRoleBadge(ctx, lm, w, h, roleText, col) {
+  const x = lm[12].x * w, y = lm[12].y * h - 24;
+  ctx.save();
+  ctx.font = '700 12px "JetBrains Mono"';
+  const tw = ctx.measureText(roleText).width + 14;
+  ctx.fillStyle = col;
+  ctx.strokeStyle = '#020617';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.roundRect(x - tw / 2, y - 12, tw, 22, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#020617';
+  ctx.textAlign = 'center';
+  ctx.fillText(roleText, x, y + 3);
+  ctx.restore();
+}
+
+function knotBanner(ctx, w, S, n, prefix = '') {
+  const txt = `${prefix}STEP ${n}/4 · ${S.title}`;
+  ctx.save();
+  ctx.font = '700 18px "Space Grotesk"';
+  const tw = ctx.measureText(txt).width + 30;
+  ctx.fillStyle = S.color;
+  ctx.shadowColor = S.color;
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.roundRect(w / 2 - tw / 2, 14, tw, 36, 10);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#020617';
+  ctx.textAlign = 'center';
+  ctx.fillText(txt, w / 2, 38);
+  ctx.restore();
+}
+
+function knotOverlay(ctx, w, h, text, col, age) {
+  const k = Math.min(1, age / 180), fade = age > 650 ? Math.max(0, 1 - (age - 650) / 200) : 1;
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.translate(w / 2, h / 2);
+  ctx.scale(0.65 + 0.35 * k, 0.65 + 0.35 * k);
+  ctx.font = '400 50px Creepster, cursive';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#020617';
+  ctx.strokeText(text, 0, 0);
+  ctx.fillStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 24;
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
+function kcSync(si, okL, okR, hold, S) {
+  const sig = [si, KN.done.join(), okL, okR, hold.toFixed(1), stageState].join('|'); if (sig === KN.sig) return; KN.sig = sig;
+  KNOT_STEPS.forEach((s, i) => $('kc' + i).className = 'kc-card' + (KN.done[i] ? ' done' : i === si ? ' active' : ''));
+  $('kcBar').style.width = (KN.done.filter(Boolean).length / 4 * 100) + '%';
+  const say = $('kcSay'); say.style.setProperty('--c', S.color); say.innerHTML = `<b>${S.icon} ${S.say}</b>`;
+  $('kcMistake').textContent = '💡 ' + S.mistake;
+  const set = (id, name, v) => {
+    const e = $(id);
+    e.className = 'kc-chip' + (v === true ? ' ok' : v === false ? ' bad' : '');
+    e.textContent = name + (v === true ? ' ✔ IN TARGET' : v === false ? ' ➔ MOVE TO RING' : ' – SHOW HAND');
+  };
+  set('kcL', '🔵 CYAN HAND', okL);
+  set('kcR', '🟡 GOLD HAND', okR);
+  $('kcHold').textContent = `HOLD ${hold.toFixed(1)}s / ${KN_HOLD}s`;
+}
+
+function knotHint(name, c, t) {
+  const dx = t[0] - c.x, dy = t[1] - c.y;
+  const dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'RIGHT ➜' : '⬅ LEFT') : (dy > 0 ? 'DOWN ⬇' : 'UP ⬆');
+  return `${name}: move ${dir}`;
+}
+
+function renderKnotFrame(E) {
+  const { now, gCtx, uCtx, gc, uc, video } = E, W = gc.width, H = gc.height, t = now / 1000;
+  const si = stepIndex % 4, S = KNOT_STEPS[si], dt = KN.last ? Math.min(0.1, (now - KN.last) / 1000) : 0;
+  KN.last = now;
+  if (KN.seen !== si) { KN.seen = si; KN.hold = 0; }
+
+  const cyc = t % 1.8, u = Math.min(1, cyc / 1.3);
+
+  const gl = knotPos(S, 'L', u), gr = knotPos(S, 'R', u);
+  const gLh = makeSyntheticHand(gl[0], gl[1], 0.02, 1, 1), gRh = makeSyntheticHand(gr[0], gr[1], 0.02, 1, -1);
+  draw3DPerspectiveStage(gCtx, W, H, 0);
+  knotDrawTie(gCtx, W, H, si, u, gripPt(gLh, W, H), gripPt(gRh, W, H), 1.0);
+  if (si === 2) knotRing(gCtx, W * 0.5, H * 0.30, '#34d399', 'UP HERE', t, 28);
+  if (si === 3) knotRing(gCtx, W * 0.5, H * 0.42, '#fb923c', 'DRAG DOWN', t, 28);
+  knotArrow(gCtx, W, H, 'L', S, '#22d3ee', S.labL, t);
+  knotArrow(gCtx, W, H, 'R', S, '#fbbf24', S.labR, t);
+  draw21PointHandSkeleton(gCtx, W, H, gLh, '#22d3ee', '#22d3ee');
+  draw21PointHandSkeleton(gCtx, W, H, gRh, '#fbbf24', '#fbbf24');
+  knotRoleBadge(gCtx, gLh, W, H, 'CYAN', '#22d3ee');
+  knotRoleBadge(gCtx, gRh, W, H, 'GOLD', '#fbbf24');
+  knotBanner(gCtx, W, S, S.id, 'TUTOR · ');
+  $('ghostStepTag').textContent = `STEP ${S.id}/4 · ${S.title}`;
+  $('ghostInstruction').textContent = S.say;
+
+  draw3DPerspectiveStage(uCtx, W, H, 0);
+  if (!simulatedAthlete && webcamReady) {
+    uCtx.save();
+    uCtx.globalAlpha = 0.28;
+    uCtx.translate(W, 0);
+    uCtx.scale(-1, 1);
+    uCtx.drawImage(video, 0, 0, W, H);
+    uCtx.restore();
+  }
+
+  if (stageState === 'WATCH') {
+    knotDrawTie(uCtx, W, H, si, u, gripPt(gLh, W, H), gripPt(gRh, W, H), 0.92);
+    knotArrow(uCtx, W, H, 'L', S, '#22d3ee', S.labL, t);
+    knotArrow(uCtx, W, H, 'R', S, '#fbbf24', S.labR, t);
+    draw21PointHandSkeleton(uCtx, W, H, gLh, '#22d3ee', '#22d3ee');
+    draw21PointHandSkeleton(uCtx, W, H, gRh, '#fbbf24', '#fbbf24');
+    knotBanner(uCtx, W, S, S.id, '👁️ DEMO PREVIEW · ');
+    $('boneStatusTag').textContent = '👁️ WATCHING DEMO — GET READY!';
+    $('feedbackText').textContent = `Watch how ${S.short}! Your turn starts automatically...`;
+    $('feedbackBubble').className = 'callout-bubble';
+    kcSync(si, null, null, 0, S);
+    updateAndDrawParticles(uCtx);
+    return;
+  }
+
+  const eL = S.L.b, eR = S.R.b;
+  knotRing(uCtx, eL[0] * W, eL[1] * H, '#22d3ee', '🔵 CYAN TARGET', t, 38);
+  knotRing(uCtx, eR[0] * W, eR[1] * H, '#fbbf24', '🟡 GOLD TARGET', t, 38);
+
+  let roles = {};
+  if (simulatedAthlete) {
+    const pl = knotPos(S, 'L', u), pr = knotPos(S, 'R', u);
+    const hl = makeSyntheticHand(pl[0], pl[1], 0.02, 1, 1), hr = makeSyntheticHand(pr[0], pr[1], 0.02, 1, -1);
+    roles = { L: { lm: hl, c: palmC(hl) }, R: { lm: hr, c: palmC(hr) } };
+  } else {
+    roles = assignRoles(latestHands.map(h => {
+      const lm = h.map(p => ({ x: 1 - p.x, y: p.y }));
+      return { lm, c: palmC(lm) };
+    }));
+  }
+
+  const dist = (r, tg) => r ? Math.hypot(r.c.x - tg[0], r.c.y - (tg[1] + 0.075)) : 9;
+  const dL = dist(roles.L, eL), dR = dist(roles.R, eR);
+  const okL = roles.L ? dL < KN_TOL : null, okR = roles.R ? dR < KN_TOL : null;
+
+  const progL = roles.L ? Math.max(0, Math.min(1, 1 - dL / 0.35)) : u;
+  const progR = roles.R ? Math.max(0, Math.min(1, 1 - dR / 0.35)) : u;
+  const liveProgress = Math.max(progL, progR);
+
+  const userGripL = roles.L ? gripPt(roles.L.lm, W, H) : gripPt(gLh, W, H);
+  const userGripR = roles.R ? gripPt(roles.R.lm, W, H) : gripPt(gRh, W, H);
+  const hasHands = !!(roles.L || roles.R);
+  knotDrawTie(uCtx, W, H, si, hasHands ? liveProgress : u, userGripL, userGripR, hasHands ? 1.0 : 0.45);
+
+  [['L', '#22d3ee', 'CYAN'], ['R', '#fbbf24', 'GOLD']].forEach(([k, col, label]) => {
+    const r = roles[k];
+    if (!r) return;
+    const good = k === 'L' ? okL : okR;
+    const c2 = good ? '#10b981' : col;
+    draw21PointHandSkeleton(uCtx, W, H, r.lm, c2, c2);
+    knotRoleBadge(uCtx, r.lm, W, H, good ? '✔ LOCKED' : label, c2);
+  });
+
+  if (stageState === 'TRY') {
+    const both = okL === true && okR === true;
+    KN.hold = both ? KN.hold + dt : Math.max(0, KN.hold - dt * 1.2);
+    if (both && KN.hold >= KN_HOLD) {
+      KN.done[si] = true;
+      totalHits++;
+      combo++;
+      AudioEngine.playLock(combo);
+      spawnShatterBurst(W * 0.35, H * 0.5, S.color);
+      spawnShatterBurst(W * 0.65, H * 0.5, '#fbbf24');
+      KN.flash = { t: now, text: `STEP ${S.id} TIED!`, col: S.color };
+      KN.hold = 0;
+      if (si === 3) {
+        KN.complete = now;
+      } else {
+        stepIndex = si + 1;
+        stageStartTime = now;
+        renderStepChips();
+      }
+    }
+    const bad = [];
+    if (okL === false) bad.push(knotHint('🔵 CYAN', roles.L.c, [eL[0], eL[1] + 0.075]));
+    if (okR === false) bad.push(knotHint('🟡 GOLD', roles.R.c, [eR[0], eR[1] + 0.075]));
+    const seen = (roles.L ? 1 : 0) + (roles.R ? 1 : 0);
+    $('boneStatusTag').textContent = both ? '✅ TYING STEP…' : seen < 2 ? '👐 RAISE BOTH HANDS TO TIE' : '🎯 MOVE ROPES TO RINGS';
+    $('feedbackText').textContent = both
+      ? `LOCKING STEP (${KN.hold.toFixed(1)}s / ${KN_HOLD}s)…`
+      : seen < 2 ? 'Raise both hands to grab the Cyan & Gold ropes!' : bad.join('  •  ');
+    $('feedbackBubble').className = 'callout-bubble ' + (both ? 'good-alert' : 'error-alert');
+    $('timerTag').textContent = `HOLD ${KN.hold.toFixed(1)}s`;
+    $('camAngleVal').textContent = seen >= 2 ? 'BOTH ROPES IN HAND' : 'GRAB BOTH ROPES';
+    $('camAngleVal').style.color = seen >= 2 ? 'var(--green)' : 'var(--gold)';
+    updateRankTelemetry(seen < 2 ? 0 : Math.max(0, Math.min(100, Math.round(100 - ((dL + dR) / 2) * 200))));
+  } else {
+    $('boneStatusTag').textContent = 'READY — PRESS WATCH DEMO OR START';
+  }
+  kcSync(si, okL, okR, KN.hold, S);
+
+  if (KN.flash && now - KN.flash.t < 750) knotOverlay(uCtx, W, H, KN.flash.text, KN.flash.col, now - KN.flash.t);
+  if (KN.complete) {
+    const age = now - KN.complete;
+    knotOverlay(uCtx, W, H, '🎉 TIE KNOT COMPLETE! 🎉', '#fbbf24', Math.min(age, 600));
+    uCtx.fillStyle = '#f8fafc';
+    uCtx.font = '700 18px "Space Grotesk"';
+    uCtx.textAlign = 'center';
+    uCtx.fillText('Tap EXPORT RANK CARD to share your result', W / 2, H / 2 + 46);
+    if (age > 2600) { knotReset(); stepIndex = 0; stageStartTime = now; renderStepChips(); }
+  }
+  updateAndDrawParticles(uCtx);
+}
+
+init();
+</script>
+</body>
+</html>
